@@ -2,7 +2,7 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 
-#include <THC/THC.h>
+#include <ATen/ceil_div.h>
 #include <THC/THCAtomics.cuh>
 #include <THC/THCDeviceUtils.cuh>
 
@@ -94,11 +94,11 @@ at::Tensor ARF_forward_cuda(const at::Tensor& weight,
   const long output_size = nOutputPlane * nInputPlane * nEntry;
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
-  dim3 grid(std::min(THCCeilDiv(output_size, 512L), 4096L));
+  dim3 grid(std::min(at::ceil_div(output_size, 512L), 4096L));
   dim3 block(512);
 
   if (output.numel() == 0) {
-    THCudaCheck(cudaGetLastError());
+    C10_CUDA_CHECK(cudaGetLastError());
     return output;
   }
 
@@ -114,7 +114,7 @@ at::Tensor ARF_forward_cuda(const at::Tensor& weight,
          nEntry,
          output.contiguous().data<scalar_t>());
   });
-  THCudaCheck(cudaGetLastError());
+  C10_CUDA_CHECK(cudaGetLastError());
   return output;
 }
 
@@ -137,12 +137,12 @@ at::Tensor ARF_backward_cuda(const at::Tensor& indices,
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-  dim3 grid(std::min(THCCeilDiv(count, 512L), 4096L));
+  dim3 grid(std::min(at::ceil_div(count, 512L), 4096L));
   dim3 block(512);
 
   // handle possibly empty gradients
   if (gradOutput.numel() == 0) {
-    THCudaCheck(cudaGetLastError());
+    C10_CUDA_CHECK(cudaGetLastError());
     return gradWeight;
   }
 
@@ -158,6 +158,6 @@ at::Tensor ARF_backward_cuda(const at::Tensor& indices,
          nEntry,
          gradWeight.contiguous().data<scalar_t>());
   });
-  THCudaCheck(cudaGetLastError());
+  C10_CUDA_CHECK(cudaGetLastError());
   return gradWeight;
 }

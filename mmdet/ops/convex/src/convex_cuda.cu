@@ -3,7 +3,7 @@
 #include <c10/cuda/CUDAGuard.h>
 #include <torch/extension.h>
 
-#include <THC/THC.h>
+#include <ATen/ceil_div.h>
 #include <THC/THCDeviceUtils.cuh>
 
 #define INF 10000000
@@ -106,7 +106,7 @@ at::Tensor convex_sort_cuda(
     return convex_index_t;
   }
 
-  dim3 blocks(THCCeilDiv(nbs, 512));
+  dim3 blocks(at::ceil_div(nbs, 512));
   dim3 threads(512);
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 

@@ -2,7 +2,7 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 
-#include <THC/THC.h>
+#include <ATen/ceil_div.h>
 #include <THC/THCAtomics.cuh>
 #include <THC/THCDeviceUtils.cuh>
 
@@ -101,11 +101,11 @@ std::tuple<at::Tensor, at::Tensor> RIE_forward_cuda(const at::Tensor& feature,
   const long count = nBatch * nFeature;
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
-  dim3 grid(std::min(THCCeilDiv(count, 512L), 4096L));
+  dim3 grid(std::min(at::ceil_div(count, 512L), 4096L));
   dim3 block(512);
 
   if (mainDirection.numel() == 0) {
-    THCudaCheck(cudaGetLastError());
+    C10_CUDA_CHECK(cudaGetLastError());
     return std::make_tuple(mainDirection, aligned);
   }
 
@@ -119,7 +119,7 @@ std::tuple<at::Tensor, at::Tensor> RIE_forward_cuda(const at::Tensor& feature,
          mainDirection.contiguous().data<uint8_t>(),
          aligned.contiguous().data<scalar_t>());
   });
-  THCudaCheck(cudaGetLastError());
+  C10_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(mainDirection, aligned);
 }
 
@@ -138,12 +138,12 @@ at::Tensor RIE_backward_cuda(const at::Tensor& mainDirection,
   const long count = nBatch * nFeature;
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
-  dim3 grid(std::min(THCCeilDiv(count, 512L), 4096L));
+  dim3 grid(std::min(at::ceil_div(count, 512L), 4096L));
   dim3 block(512);
 
   // handle possibly empty gradients
   if (gradOutput.numel() == 0) {
-    THCudaCheck(cudaGetLastError());
+    C10_CUDA_CHECK(cudaGetLastError());
     return gradInput;
   }
 
@@ -157,6 +157,6 @@ at::Tensor RIE_backward_cuda(const at::Tensor& mainDirection,
          nOrientation,
          gradInput.contiguous().data<scalar_t>());
   });
-  THCudaCheck(cudaGetLastError());
+  C10_CUDA_CHECK(cudaGetLastError());
   return gradInput;
 }
