@@ -9,6 +9,7 @@ import BboxToolkit as bt
 import cv2
 import mmcv
 import numpy as np
+from BboxToolkit import get_classes
 
 from mmdet.core import eval_arb_map, eval_arb_recalls
 from mmdet.ops.nms import nms
@@ -28,6 +29,7 @@ class DOTADataset(CustomDataset):
         self.task = task
         self.fp_ratio = fp_ratio
         super(DOTADataset, self).__init__(**kwargs)
+        self.cat2label = None
 
     @classmethod
     def get_classes(cls, classes=None):
@@ -48,9 +50,11 @@ class DOTADataset(CustomDataset):
         patch_annfile = osp.join(ann_file, 'patch_annfile.pkl')
         patch_dict = mmcv.load(patch_annfile)
         cls, contents = patch_dict['cls'], patch_dict['content']
+        cls = get_classes('DOTA' if cls is None else cls)
         self.ori_CLASSES = cls
         if self.CLASSES is None:
             self.CLASSES = cls
+        self.cat2label = {cat: i for i, cat in enumerate(self.CLASSES)}
 
         if self.test_mode:
             return contents
@@ -58,6 +62,9 @@ class DOTADataset(CustomDataset):
         self.pp_infos = []
         self.fp_infos = []
         for content in contents:
+            labels = content['ann']['labels']
+            labels = [self.cat2label[label] for label in labels]
+            content['ann']['labels'] = np.array(labels)
             if content['ann']['bboxes'].size != 0:
                 self.pp_infos.append(content)
             else:
@@ -71,7 +78,7 @@ class DOTADataset(CustomDataset):
         elif self.fp_ratio == 'all':
             return self.pp_infos + self.fp_infos
         else:
-            num = min(self.fp_ratio*len(self.pp_infos), len(self.fp_infos))
+            num = min(self.fp_ratio * len(self.pp_infos), len(self.fp_infos))
             fp_infos = sample(self.fp_infos, k=int(num))
             return self.pp_infos + fp_infos
 

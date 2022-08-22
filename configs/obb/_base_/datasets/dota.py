@@ -1,5 +1,5 @@
 dataset_type = 'DOTADataset'
-data_root = 'data/ss_dota_split/'
+data_root = '/datasets/dota_mmrotate_ss/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 train_pipeline = [
@@ -67,7 +67,7 @@ test_pipeline = [
 # uncomments it when use trainval as train
 data = dict(
     samples_per_gpu=2,
-    workers_per_gpu=4,
+    workers_per_gpu=0,
     train=dict(
         type=dataset_type,
         task='Task1',
