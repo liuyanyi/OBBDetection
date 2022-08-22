@@ -162,6 +162,11 @@ class S2AHead(BaseDenseHead):
                                                   self.feat_channels,
                                                   kernel_size=3,
                                                   deform_groups=1))
+            elif align_type == 'AlignConvLite':
+                self.align_convs.append(AlignConv(self.feat_channels,
+                                                  self.feat_channels,
+                                                  kernel_size=1,
+                                                  deform_groups=1))
 
     def init_weights(self):
         """Initialize weights of the head."""
